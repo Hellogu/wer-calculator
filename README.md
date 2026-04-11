@@ -182,6 +182,7 @@ wer-calculator/
 
 - 开发工具：[Cursor](https://cursor.sh/) / [Trae](https://trae.ai/)
 - 算法参考：动态规划编辑距离算法
+- 项目开发：本项目由 [Trae](https://trae.ai/) AI 助手协助完成
 
 ---
 
