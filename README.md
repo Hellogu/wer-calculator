@@ -21,16 +21,16 @@
 
 ### 方式一：使用可执行文件（推荐）
 
-1. 从 [Releases](https://github.com/yourusername/WERify/releases) 下载对应系统的可执行文件
-2. 双击运行 `WERify.exe`（Windows）或 `WERify`（macOS/Linux）
+1. 从 [Releases](https://github.com/yourusername/wer-calculator/releases) 下载对应系统的可执行文件
+2. 双击运行 `wer-calculator.exe`（Windows）或 `wer-calculator`（macOS/Linux）
 3. 浏览器自动打开 `http://localhost:5000`
 
 ### 方式二：源码运行
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourusername/WERify.git
-cd WERify/wer-calculator
+git clone https://github.com/yourusername/wer-calculator.git
+cd wer-calculator
 
 # 2. 创建虚拟环境（推荐）
 python -m venv venv
@@ -127,11 +127,11 @@ python test_calculator.py
 pip install pyinstaller
 
 # 打包（使用配置文件）
-pyinstaller WERify.spec
+pyinstaller wer-calculator.spec
 
 # 输出文件
-# Windows: dist/WERify.exe
-# macOS/Linux: dist/WERify
+# Windows: dist/wer-calculator.exe
+# macOS/Linux: dist/wer-calculator
 ```
 
 ## 🛠 技术栈
@@ -150,7 +150,7 @@ wer-calculator/
 ├── database.py            # SQLite 数据库操作
 ├── test_calculator.py     # 测试用例（36个）
 ├── requirements.txt       # Python 依赖
-├── WERify.spec           # PyInstaller 配置
+├── wer-calculator.spec   # PyInstaller 配置
 ├── static/
 │   ├── index.html        # 主页面
 │   ├── history.html      # 历史记录页面
@@ -161,7 +161,7 @@ wer-calculator/
 
 ## 📝 更新日志
 
-### v1.0 (2024-04-11)
+### v1.0 (2026-04-11)
 - ✅ 支持中英日三语 WER/CER 计算
 - ✅ 详细对比视图（蓝/红/绿高亮）
 - ✅ 历史记录管理（支持语种过滤）
