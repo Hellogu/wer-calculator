@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史记录 - ASR WER/CER Calculator</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部栏 - 精简版 -->
+        <div class="header compact">
+            <div class="logo">
+                <h1>历史记录</h1>
+            </div>
+            <a href="/" class="back-link">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                返回计算
+            </a>
+        </div>
+
+        <!-- 过滤栏 -->
+        <div class="filter-bar" v-if="history.length > 0 || filterLanguage">
+            <div class="filter-group">
+                <label class="filter-label">语种过滤:</label>
+                <select v-model="filterLanguage" @change="onFilterChange" class="filter-select">
+                    <option value="">全部</option>
+                    <option value="en">英文</option>
+                    <option value="zh">中文</option>
+                    <option value="ja">日文</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">每页显示:</label>
+                <select v-model="pageSize" @change="onPageSizeChange" class="filter-select">
+                    <option :value="5">5条</option>
+                    <option :value="10">10条</option>
+                    <option :value="20">20条</option>
+                    <option :value="50">50条</option>
+                </select>
+            </div>
+            <div class="filter-right">
+                <span class="record-count">共 {{ totalRecords }} 条记录</span>
+                <button @click="clearAll" class="clear-btn-small" title="清空所有历史记录">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    清空全部
+                </button>
+            </div>
+        </div>
+
+        <!-- 历史记录列表 -->
+        <div class="history-container" v-if="history.length > 0">
+            <div class="history-list">
+                <div v-for="item in paginatedHistory" :key="item.id" class="history-card">
+                    <div class="history-main">
+                        <div class="history-title-section">
+                            <h3 class="history-title">{{ item.title || '未命名记录' }}</h3>
+                            <span class="history-time">{{ formatTime(item.timestamp) }}</span>
+                        </div>
+                        <div class="history-preview">
+                            <div class="preview-item">
+                                <span class="preview-label">参考:</span>
+                                <span class="preview-text" :class="'lang-' + item.language">{{ truncateText(item.reference, item) }}</span>
+                            </div>
+                            <div class="preview-item">
+                                <span class="preview-label">识别:</span>
+                                <span class="preview-text" :class="'lang-' + item.language">{{ truncateText(item.hypothesis, item) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="history-meta">
+                        <div class="history-result-row">
+                            <span class="history-lang">{{ formatLanguage(item.language) }}</span>
+                            <div class="history-result" :class="getResultClass(item.result)">
+                                <span class="result-metric">{{ item.metric }}</span>
+                                <span class="result-value">{{ item.result }}%</span>
+                            </div>
+                        </div>
+                        <div class="history-stats">
+                            <span class="stat-badge" title="替换">S:{{ item.substitutions }}</span>
+                            <span class="stat-badge" title="删除">D:{{ item.deletions }}</span>
+                            <span class="stat-badge" title="插入">I:{{ item.insertions }}</span>
+                            <span class="stat-badge total" title="总词数">Σ{{ item.total }}</span>
+                        </div>
+                    </div>
+                    <div class="history-actions">
+                        <button @click="showComparison(item)" class="action-btn compare-btn" title="查看对比详情">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            对比详情
+                        </button>
+                        <button @click="deleteRecord(item.id)" class="action-btn delete-btn" title="删除记录">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            删除
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分页控件 -->
+            <div class="pagination" v-if="totalPages > 1">
+                <button 
+                    @click="goToPage(currentPage - 1)" 
+                    :disabled="currentPage === 1"
+                    class="page-btn"
+                >
+                    上一页
+                </button>
+                
+                <button 
+                    v-for="page in pageNumbers" 
+                    :key="page"
+                    @click="goToPage(page)"
+                    :class="['page-btn', { active: page === currentPage }]"
+                >
+                    {{ page }}
+                </button>
+                
+                <button 
+                    @click="goToPage(currentPage + 1)" 
+                    :disabled="currentPage === totalPages"
+                    class="page-btn"
+                >
+                    下一页
+                </button>
+                
+                <span class="page-info">{{ currentPage }} / {{ totalPages }} 页</span>
+            </div>
+            
+        </div>
+        
+        <div v-else class="empty-section">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <p class="empty-text">暂无历史记录</p>
+            <a href="/" class="empty-link">去计算页面</a>
+        </div>
+
+        <!-- 错误提示 -->
+        <div v-if="error" class="error-message compact">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            {{ error }}
+        </div>
+
+        <!-- 对比详情弹窗 -->
+        <div v-if="showModal" class="modal-overlay" @click.self="closeComparison">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>对比详情</h2>
+                    <div class="modal-legend">
+                        <span class="legend-item correct">正确</span>
+                        <span class="legend-item substitution">替换</span>
+                        <span class="legend-item deletion">删除</span>
+                        <span class="legend-item insertion">插入</span>
+                    </div>
+                    <button @click="closeComparison" class="modal-close">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="modal-body" v-if="comparisonData">
+                    <div class="modal-column">
+                        <div class="modal-column-header">
+                            <span class="modal-label">参考文本</span>
+                            <span class="modal-count">{{ comparisonData.reference.length }} 字符</span>
+                        </div>
+                        <div class="modal-text-content" ref="modalRefContent" @scroll="syncScroll('ref')">
+                            <span
+                                v-for="(item, index) in comparisonData.alignment"
+                                :key="'ref-'+index"
+                                :class="['modal-token', item.type]"
+                                :title="item.type === 'deletion' ? '删除' : (item.type === 'substitution' ? '替换' : '正确')"
+                            >
+                                {{ item.ref || '∅' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="modal-column">
+                        <div class="modal-column-header">
+                            <span class="modal-label">识别文本</span>
+                            <span class="modal-count">{{ comparisonData.hypothesis.length }} 字符</span>
+                        </div>
+                        <div class="modal-text-content" ref="modalHypContent" @scroll="syncScroll('hyp')">
+                            <span
+                                v-for="(item, index) in comparisonData.alignment"
+                                :key="'hyp-'+index"
+                                :class="['modal-token', item.type]"
+                                :title="item.type === 'insertion' ? '插入' : (item.type === 'substitution' ? '替换' : '正确')"
+                            >
+                                {{ item.hyp || '∅' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="modal-loading">
+                    <div class="spin"></div>
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    history: [],
+                    error: null,
+                    filterLanguage: '',
+                    currentPage: 1,
+                    pageSize: 5,
+                    totalRecords: 0,
+                    showModal: false,
+                    comparisonData: null
+                }
+            },
+            computed: {
+                totalPages() {
+                    return Math.ceil(this.totalRecords / this.pageSize);
+                },
+                paginatedHistory() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.history.slice(start, end);
+                },
+                pageNumbers() {
+                    const pages = [];
+                    const maxVisible = 5;
+                    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+                    let end = Math.min(this.totalPages, start + maxVisible - 1);
+                    
+                    if (end - start < maxVisible - 1) {
+                        start = Math.max(1, end - maxVisible + 1);
+                    }
+                    
+                    for (let i = start; i <= end; i++) {
+                        pages.push(i);
+                    }
+                    return pages;
+                }
+            },
+            mounted() {
+                this.loadHistory();
+            },
+            methods: {
+                async loadHistory() {
+                    try {
+                        let url = '/api/history';
+                        if (this.filterLanguage) {
+                            url += '?language=' + this.filterLanguage;
+                        }
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.history = data.data;
+                            this.totalRecords = data.data.length;
+                        } else {
+                            this.error = data.error || '加载失败';
+                        }
+                    } catch (err) {
+                        this.error = '请求失败: ' + err.message;
+                    }
+                },
+                onFilterChange() {
+                    this.currentPage = 1;
+                    this.loadHistory();
+                },
+                onPageSizeChange() {
+                    this.currentPage = 1;
+                },
+                goToPage(page) {
+                    if (page >= 1 && page <= this.totalPages) {
+                        this.currentPage = page;
+                    }
+                },
+                formatTime(timestamp) {
+                    // 数据库已存储 UTC+8 时间，直接格式化显示
+                    const date = new Date(timestamp.replace(' ', 'T'));
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hour = String(date.getHours()).padStart(2, '0');
+                    const minute = String(date.getMinutes()).padStart(2, '0');
+                    const second = String(date.getSeconds()).padStart(2, '0');
+                    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+                },
+                formatLanguage(lang) {
+                    const map = {
+                        'en': '英文',
+                        'zh': '中文',
+                        'ja': '日文'
+                    };
+                    return map[lang] || lang;
+                },
+                getResultClass(result) {
+                    if (result < 5) return 'excellent';
+                    if (result < 15) return 'good';
+                    return 'poor';
+                },
+                truncateText(text, item) {
+                    // 根据语言类型调整字符数，使显示宽度大致一致
+                    // 英文单词较长，显示更多字符；中日文字符较宽，显示较少字符
+                    const maxLength = item.language === 'en' ? 120 : 60;
+                    if (text.length <= maxLength) return text;
+                    return text.substring(0, maxLength) + '...';
+                },
+                async showComparison(item) {
+                    this.showModal = true;
+                    document.body.style.overflow = 'hidden';
+                    this.comparisonData = null;
+
+                    // 如果数据库中已有 alignment 数据，直接使用
+                    if (item.alignment) {
+                        try {
+                            const alignment = JSON.parse(item.alignment);
+                            this.comparisonData = {
+                                reference: item.reference,
+                                hypothesis: item.hypothesis,
+                                alignment: alignment
+                            };
+                        } catch (e) {
+                            // 解析失败，重新计算
+                            await this.calculateComparison(item);
+                        }
+                    } else {
+                        // 旧数据没有 alignment，需要重新计算
+                        await this.calculateComparison(item);
+                    }
+                },
+                async calculateComparison(item) {
+                    try {
+                        const response = await fetch('/api/calculate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                title: item.title,
+                                language: item.language,
+                                reference: item.reference,
+                                hypothesis: item.hypothesis,
+                                skip_save: true
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.comparisonData = {
+                                reference: item.reference,
+                                hypothesis: item.hypothesis,
+                                alignment: data.data.alignment
+                            };
+                        } else {
+                            this.error = data.error || '计算失败';
+                            this.closeComparison();
+                        }
+                    } catch (err) {
+                        this.error = '请求失败: ' + err.message;
+                        this.closeComparison();
+                    }
+                },
+                closeComparison() {
+                    this.showModal = false;
+                    this.comparisonData = null;
+                    document.body.style.overflow = '';
+                },
+                syncScroll(source) {
+                    // 同步左右两栏的滚动位置
+                    const modalRefContent = this.$refs.modalRefContent;
+                    const modalHypContent = this.$refs.modalHypContent;
+                    if (!modalRefContent || !modalHypContent) return;
+
+                    if (source === 'ref') {
+                        modalHypContent.scrollTop = modalRefContent.scrollTop;
+                    } else {
+                        modalRefContent.scrollTop = modalHypContent.scrollTop;
+                    }
+                },
+                async deleteRecord(id) {
+                    try {
+                        const response = await fetch(`/api/history/${id}`, {
+                            method: 'DELETE'
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.loadHistory();
+                        } else {
+                            this.error = data.error || '删除失败';
+                        }
+                    } catch (err) {
+                        this.error = '请求失败: ' + err.message;
+                    }
+                },
+                async clearAll() {
+                    if (!confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/history', {
+                            method: 'DELETE'
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.loadHistory();
+                        } else {
+                            this.error = data.error || '清空失败';
+                        }
+                    } catch (err) {
+                        this.error = '请求失败: ' + err.message;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
