@@ -10,7 +10,7 @@ import subprocess
 
 def clean_build():
     """清理之前的构建文件"""
-    print("🧹 清理构建文件...")
+    print("[清理] 清理构建文件...")
     dirs_to_remove = ['build', 'dist']
     for dir_name in dirs_to_remove:
         if os.path.exists(dir_name):
@@ -21,23 +21,23 @@ def clean_build():
     if os.path.exists('app.spec'):
         os.remove('app.spec')
         print("   删除 app.spec")
-    print("✅ 清理完成\n")
+    print("[完成] 清理完成\n")
 
 
 def build_executable():
     """使用 PyInstaller 打包"""
-    print("🔨 开始打包...")
+    print("[打包] 开始打包...")
     
     # 检查 PyInstaller
     try:
         import PyInstaller
     except ImportError:
-        print("❌ PyInstaller 未安装，正在安装...")
+        print("[错误] PyInstaller 未安装，正在安装...")
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyinstaller'])
     
     # 执行打包
     cmd = [
-        'pyinstaller',
+        sys.executable, '-m', 'PyInstaller',
         '--clean',
         '--noconfirm',
         'WERify.spec'
@@ -47,16 +47,16 @@ def build_executable():
     result = subprocess.run(cmd, capture_output=False)
     
     if result.returncode != 0:
-        print("\n❌ 打包失败")
+        print("\n[错误] 打包失败")
         return False
     
-    print("\n✅ 打包成功！")
+    print("\n[完成] 打包成功！")
     return True
 
 
 def copy_additional_files():
     """复制额外文件到输出目录"""
-    print("\n📋 复制额外文件...")
+    print("\n[复制] 复制额外文件...")
     
     dist_dir = 'dist'
     files_to_copy = [
@@ -69,13 +69,13 @@ def copy_additional_files():
             shutil.copy(file_name, os.path.join(dist_dir, file_name))
             print(f"   复制 {file_name}")
     
-    print("✅ 复制完成\n")
+    print("[完成] 复制完成\n")
 
 
 def show_result():
     """显示打包结果"""
     print("=" * 60)
-    print("📦 打包完成！")
+    print("[完成] 打包完成！")
     print("=" * 60)
     
     dist_dir = os.path.abspath('dist')
@@ -91,7 +91,7 @@ def show_result():
         print(f"  2. 浏览器访问 http://localhost:5000")
         print(f"  3. 支持局域网其他设备访问")
     else:
-        print("\n⚠️ 未找到输出文件，请检查打包日志")
+        print("\n[警告] 未找到输出文件，请检查打包日志")
     
     print("\n" + "=" * 60)
 
@@ -99,7 +99,7 @@ def show_result():
 def main():
     """主函数"""
     print("\n" + "=" * 60)
-    print("🔨 WERify 打包工具")
+    print("[WERify] 打包工具")
     print("=" * 60 + "\n")
     
     # 确认
