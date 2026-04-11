@@ -175,7 +175,7 @@ if __name__ == '__main__':
     import threading
     
     print("=" * 60)
-    print("  WERify - ASR WER/CER Calculator v1.0")
+    print("  wer-calculator - ASR WER/CER Calculator v1.0")
     print("=" * 60)
     print("本地访问:    http://localhost:5000")
     print("局域网访问:  http://<本机IP>:5000")

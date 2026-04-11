@@ -1,5 +1,5 @@
 """
-WERify 打包脚本
+wer-calculator 打包脚本
 使用 PyInstaller 打包为可执行文件
 """
 import os
@@ -40,7 +40,7 @@ def build_executable():
         sys.executable, '-m', 'PyInstaller',
         '--clean',
         '--noconfirm',
-        'WERify.spec'
+        'wer-calculator.spec'
     ]
     
     print(f"   执行: {' '.join(cmd)}\n")
@@ -79,7 +79,7 @@ def show_result():
     print("=" * 60)
     
     dist_dir = os.path.abspath('dist')
-    exe_name = 'WERify.exe' if sys.platform == 'win32' else 'WERify'
+    exe_name = 'wer-calculator.exe' if sys.platform == 'win32' else 'wer-calculator'
     exe_path = os.path.join(dist_dir, exe_name)
     
     if os.path.exists(exe_path):
@@ -99,7 +99,7 @@ def show_result():
 def main():
     """主函数"""
     print("\n" + "=" * 60)
-    print("[WERify] 打包工具")
+    print("[wer-calculator] 打包工具")
     print("=" * 60 + "\n")
     
     # 确认

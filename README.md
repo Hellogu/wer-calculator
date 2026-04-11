@@ -1,4 +1,4 @@
-# WERify - ASR WER/CER Calculator
+# wer-calculator - ASR WER/CER Calculator
 
 一个用于评估语音识别（ASR）系统准确率的本地Web工具，支持中文、英文、日文三种语言的 WER/CER 计算。
 
