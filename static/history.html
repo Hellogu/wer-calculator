@@ -3,27 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="历史记录 - ASR WER/CER Calculator">
+    <meta name="theme-color" content="#0f172a">
     <title>历史记录 - ASR WER/CER Calculator</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
 </head>
 <body>
     <div id="app">
-        <!-- 顶部栏 - 精简版 -->
-        <div class="header compact">
+        <!-- 顶部栏 -->
+        <header class="header compact">
             <div class="logo">
+                <div class="logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
                 <h1>历史记录</h1>
             </div>
             <a href="/" class="back-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
                 返回计算
             </a>
-        </div>
+        </header>
 
         <!-- 过滤栏 -->
-        <div class="filter-bar" v-if="history.length > 0 || filterLanguage">
+        <section class="filter-bar" v-if="history.length > 0 || filterLanguage">
             <div class="filter-group">
-                <label class="filter-label">语种过滤:</label>
+                <label class="filter-label">语种过滤</label>
                 <select v-model="filterLanguage" @change="onFilterChange" class="filter-select">
                     <option value="">全部</option>
                     <option value="en">英文</option>
@@ -32,7 +55,7 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label class="filter-label">每页显示:</label>
+                <label class="filter-label">每页显示</label>
                 <select v-model="pageSize" @change="onPageSizeChange" class="filter-select">
                     <option :value="5">5条</option>
                     <option :value="10">10条</option>
@@ -43,16 +66,24 @@
             <div class="filter-right">
                 <span class="record-count">共 {{ totalRecords }} 条记录</span>
                 <button @click="clearAll" class="clear-btn-small" title="清空所有历史记录">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                     清空全部
                 </button>
             </div>
-        </div>
+        </section>
 
         <!-- 历史记录列表 -->
-        <div class="history-container" v-if="history.length > 0">
+        <section class="history-container" v-if="history.length > 0">
             <div class="history-list">
-                <div v-for="item in paginatedHistory" :key="item.id" class="history-card">
+                <article 
+                    v-for="item in paginatedHistory" 
+                    :key="item.id" 
+                    class="history-card"
+                    :class="getResultClass(item.result)"
+                >
                     <div class="history-main">
                         <div class="history-title-section">
                             <h3 class="history-title">{{ item.title || '未命名记录' }}</h3>
@@ -60,11 +91,11 @@
                         </div>
                         <div class="history-preview">
                             <div class="preview-item">
-                                <span class="preview-label">参考:</span>
+                                <span class="preview-label">参考</span>
                                 <span class="preview-text" :class="'lang-' + item.language">{{ truncateText(item.reference, item) }}</span>
                             </div>
                             <div class="preview-item">
-                                <span class="preview-label">识别:</span>
+                                <span class="preview-label">识别</span>
                                 <span class="preview-text" :class="'lang-' + item.language">{{ truncateText(item.hypothesis, item) }}</span>
                             </div>
                         </div>
@@ -85,26 +116,42 @@
                         </div>
                     </div>
                     <div class="history-actions">
+                        <button @click="loadRecord(item.id)" class="action-btn load-btn" title="加载到计算页面">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            加载
+                        </button>
                         <button @click="showComparison(item)" class="action-btn compare-btn" title="查看对比详情">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                            对比详情
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            对比
                         </button>
                         <button @click="deleteRecord(item.id)" class="action-btn delete-btn" title="删除记录">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
                             删除
                         </button>
                     </div>
-                </div>
+                </article>
             </div>
             
             <!-- 分页控件 -->
-            <div class="pagination" v-if="totalPages > 1">
+            <nav class="pagination" v-if="totalPages > 1" aria-label="分页导航">
                 <button 
                     @click="goToPage(currentPage - 1)" 
                     :disabled="currentPage === 1"
                     class="page-btn"
+                    aria-label="上一页"
                 >
-                    上一页
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
                 </button>
                 
                 <button 
@@ -112,6 +159,7 @@
                     :key="page"
                     @click="goToPage(page)"
                     :class="['page-btn', { active: page === currentPage }]"
+                    :aria-current="page === currentPage ? 'page' : null"
                 >
                     {{ page }}
                 </button>
@@ -120,40 +168,65 @@
                     @click="goToPage(currentPage + 1)" 
                     :disabled="currentPage === totalPages"
                     class="page-btn"
+                    aria-label="下一页"
                 >
-                    下一页
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                 </button>
                 
                 <span class="page-info">{{ currentPage }} / {{ totalPages }} 页</span>
-            </div>
-            
-        </div>
+            </nav>
+        </section>
         
-        <div v-else class="empty-section">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <!-- 空状态 -->
+        <section v-else class="empty-section">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
             <p class="empty-text">暂无历史记录</p>
             <a href="/" class="empty-link">去计算页面</a>
-        </div>
+        </section>
 
         <!-- 错误提示 -->
-        <div v-if="error" class="error-message compact">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <div v-if="error" class="error-message compact" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
             {{ error }}
         </div>
 
         <!-- 对比详情弹窗 -->
         <div v-if="showModal" class="modal-overlay" @click.self="closeComparison">
-            <div class="modal-content">
+            <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
                 <div class="modal-header">
-                    <h2>对比详情</h2>
+                    <h2 id="modal-title">对比详情</h2>
                     <div class="modal-legend">
-                        <span class="legend-item correct">正确</span>
-                        <span class="legend-item substitution">替换</span>
-                        <span class="legend-item deletion">删除</span>
-                        <span class="legend-item insertion">插入</span>
+                        <span class="legend-item correct">
+                            <span class="legend-count">{{ correctCount }}</span>
+                            正确
+                        </span>
+                        <span class="legend-item substitution">
+                            <span class="legend-count">{{ substitutionCount }}</span>
+                            替换
+                        </span>
+                        <span class="legend-item deletion">
+                            <span class="legend-count">{{ deletionCount }}</span>
+                            删除
+                        </span>
+                        <span class="legend-item insertion">
+                            <span class="legend-count">{{ insertionCount }}</span>
+                            插入
+                        </span>
                     </div>
-                    <button @click="closeComparison" class="modal-close">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <button @click="closeComparison" class="modal-close" aria-label="关闭弹窗">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
                     </button>
                 </div>
                 <div class="modal-body" v-if="comparisonData">
@@ -167,7 +240,7 @@
                                 v-for="(item, index) in comparisonData.alignment"
                                 :key="'ref-'+index"
                                 :class="['modal-token', item.type]"
-                                :title="item.type === 'deletion' ? '删除' : (item.type === 'substitution' ? '替换' : '正确')"
+                                :title="getTokenTooltip(item, 'ref')"
                             >
                                 {{ item.ref || '∅' }}
                             </span>
@@ -183,7 +256,7 @@
                                 v-for="(item, index) in comparisonData.alignment"
                                 :key="'hyp-'+index"
                                 :class="['modal-token', item.type]"
-                                :title="item.type === 'insertion' ? '插入' : (item.type === 'substitution' ? '替换' : '正确')"
+                                :title="getTokenTooltip(item, 'hyp')"
                             >
                                 {{ item.hyp || '∅' }}
                             </span>
@@ -208,7 +281,7 @@
                     error: null,
                     filterLanguage: '',
                     currentPage: 1,
-                    pageSize: 5,
+                    pageSize: 10,
                     totalRecords: 0,
                     showModal: false,
                     comparisonData: null
@@ -237,12 +310,60 @@
                         pages.push(i);
                     }
                     return pages;
+                },
+                correctCount() {
+                    if (!this.comparisonData?.alignment) return 0;
+                    return this.comparisonData.alignment.filter(a => a.type === 'correct').length;
+                },
+                substitutionCount() {
+                    if (!this.comparisonData?.alignment) return 0;
+                    return this.comparisonData.alignment.filter(a => a.type === 'substitution').length;
+                },
+                deletionCount() {
+                    if (!this.comparisonData?.alignment) return 0;
+                    return this.comparisonData.alignment.filter(a => a.type === 'deletion').length;
+                },
+                insertionCount() {
+                    if (!this.comparisonData?.alignment) return 0;
+                    return this.comparisonData.alignment.filter(a => a.type === 'insertion').length;
                 }
             },
             mounted() {
                 this.loadHistory();
+                // 添加键盘事件监听
+                document.addEventListener('keydown', this.handleGlobalKeydown);
+            },
+            beforeUnmount() {
+                document.removeEventListener('keydown', this.handleGlobalKeydown);
             },
             methods: {
+                handleGlobalKeydown(e) {
+                    // ESC 关闭弹窗
+                    if (e.key === 'Escape' && this.showModal) {
+                        this.closeComparison();
+                    }
+                },
+                getTokenTooltip(item, type) {
+                    const typeNames = {
+                        'correct': '正确匹配',
+                        'substitution': '替换错误',
+                        'deletion': '删除错误',
+                        'insertion': '插入错误'
+                    };
+                    const typeName = typeNames[item.type] || item.type;
+                    
+                    if (type === 'ref') {
+                        if (item.type === 'insertion') {
+                            return '插入：识别文本中多出的内容';
+                        }
+                        return `${typeName}：${item.ref || '空'}`;
+                    } else {
+                        if (item.type === 'deletion') {
+                            return '删除：参考文本中缺失的内容';
+                        }
+                        return `${typeName}：${item.hyp || '空'}`;
+                    }
+                },
                 async loadHistory() {
                     try {
                         let url = '/api/history';
@@ -305,6 +426,10 @@
                     if (text.length <= maxLength) return text;
                     return text.substring(0, maxLength) + '...';
                 },
+                loadRecord(id) {
+                    // 跳转到首页并加载记录
+                    window.location.href = '/?id=' + id;
+                },
                 async showComparison(item) {
                     this.showModal = true;
                     document.body.style.overflow = 'hidden';
@@ -365,7 +490,6 @@
                     document.body.style.overflow = '';
                 },
                 syncScroll(source) {
-                    // 同步左右两栏的滚动位置
                     const modalRefContent = this.$refs.modalRefContent;
                     const modalHypContent = this.$refs.modalHypContent;
                     if (!modalRefContent || !modalHypContent) return;
@@ -377,6 +501,10 @@
                     }
                 },
                 async deleteRecord(id) {
+                    if (!confirm('确定要删除这条记录吗？此操作不可恢复。')) {
+                        return;
+                    }
+
                     try {
                         const response = await fetch(`/api/history/${id}`, {
                             method: 'DELETE'
