@@ -32,7 +32,7 @@
 
 ### 方式一：使用可执行文件（推荐）
 
-1. 从 [Releases](https://github.com/yourusername/wer-calculator/releases) 下载对应系统的可执行文件
+1. 从 [Releases](https://github.com/Hellogu/wer-calculator/releases) 下载对应系统的可执行文件
 2. 双击运行 `wer-calculator.exe`（Windows）或 `wer-calculator`（macOS/Linux）
 3. 浏览器自动打开 `http://localhost:5000`
 
