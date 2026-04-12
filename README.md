@@ -7,6 +7,17 @@
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.0+-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+## 📸 演示截图
+
+### 主界面 - 深色科技主题
+![主界面](https://raw.githubusercontent.com/Hellogu/wer-calculator/master/screenshots/main-interface.png)
+
+### 计算结果对比
+![对比结果](https://raw.githubusercontent.com/Hellogu/wer-calculator/master/screenshots/comparison-result.png)
+
+### 历史记录页面
+![历史记录](https://raw.githubusercontent.com/Hellogu/wer-calculator/master/screenshots/history-page.png)
+
 ## ✨ 特性
 
 - 🌍 **多语言支持**：中文、英文、日文 WER/CER 计算
@@ -77,8 +88,8 @@ python app.py
 
 - 点击顶部「历史记录」查看所有计算记录
 - 支持按语种过滤（全部/英文/中文/日文）
-- 点击「加载」可重新加载到计算页面
-- 支持删除单条或清空全部
+- 支持查看对比详情和删除单条记录
+- 支持清空全部历史记录
 
 ## 🧮 算法说明
 
@@ -139,7 +150,7 @@ pyinstaller wer-calculator.spec
 - **后端**：Python + Flask
 - **前端**：Vue.js 3 (CDN)
 - **数据库**：SQLite
-- **样式**：原生 CSS
+- **样式**：原生 CSS + Google Fonts
 
 ## 📁 项目结构
 
