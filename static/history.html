@@ -225,7 +225,7 @@
                     <div class="modal-column">
                         <div class="modal-column-header">
                             <span class="modal-label">参考文本</span>
-                            <span class="modal-count">{{ comparisonData.reference.length }} {{ comparisonData.language === 'en' ? '词' : '字' }}</span>
+                            <span class="modal-count">{{ comparisonData.total }} {{ comparisonData.language === 'en' ? '词' : '字' }}</span>
                         </div>
                         <div class="modal-text-content" ref="modalRefContent" @scroll="syncScroll('ref')">
                             <span
@@ -241,7 +241,7 @@
                     <div class="modal-column">
                         <div class="modal-column-header">
                             <span class="modal-label">识别文本</span>
-                            <span class="modal-count">{{ comparisonData.hypothesis.length }} {{ comparisonData.language === 'en' ? '词' : '字' }}</span>
+                            <span class="modal-count">{{ hypothesisTokenCount }} {{ comparisonData.language === 'en' ? '词' : '字' }}</span>
                         </div>
                         <div class="modal-text-content" ref="modalHypContent" @scroll="syncScroll('hyp')">
                             <span
@@ -318,6 +318,14 @@
                 insertionCount() {
                     if (!this.comparisonData?.alignment) return 0;
                     return this.comparisonData.alignment.filter(a => a.type === 'insertion').length;
+                },
+                hypothesisTokenCount() {
+                    // 识别文本的token数 = 总token数 - 删除数 + 插入数
+                    if (!this.comparisonData) return 0;
+                    // 需要从原始数据中获取统计信息
+                    const total = this.comparisonData.alignment.filter(a => a.type !== 'insertion').length;
+                    const insertions = this.comparisonData.alignment.filter(a => a.type === 'insertion').length;
+                    return total + insertions;
                 }
             },
             mounted() {
@@ -431,7 +439,8 @@
                                 reference: item.reference,
                                 hypothesis: item.hypothesis,
                                 alignment: alignment,
-                                language: item.language
+                                language: item.language,
+                                total: item.total
                             };
                         } catch (e) {
                             // 解析失败，重新计算
@@ -463,7 +472,8 @@
                                 reference: item.reference,
                                 hypothesis: item.hypothesis,
                                 alignment: data.data.alignment,
-                                language: item.language
+                                language: item.language,
+                                total: data.data.total
                             };
                         } else {
                             this.error = data.error || '计算失败';

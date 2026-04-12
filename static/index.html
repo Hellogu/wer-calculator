@@ -204,7 +204,7 @@
                 <div class="comparison-column">
                     <div class="column-header">
                         <span class="column-label">参考文本</span>
-                        <span class="column-count">{{ reference.length }} {{ language === 'en' ? '词' : '字' }}</span>
+                        <span class="column-count">{{ details.total }} {{ language === 'en' ? '词' : '字' }}</span>
                     </div>
                     <div class="column-content" ref="refContent" @scroll="syncScroll('ref')">
                         <span
@@ -220,7 +220,7 @@
                 <div class="comparison-column">
                     <div class="column-header">
                         <span class="column-label">识别文本</span>
-                        <span class="column-count">{{ hypothesis.length }} {{ language === 'en' ? '词' : '字' }}</span>
+                        <span class="column-count">{{ hypothesisTokenCount }} {{ language === 'en' ? '词' : '字' }}</span>
                     </div>
                     <div class="column-content" ref="hypContent" @scroll="syncScroll('hyp')">
                         <span
@@ -295,7 +295,7 @@
                     <div class="modal-column">
                         <div class="modal-column-header">
                             <span class="modal-label">参考文本</span>
-                            <span class="modal-count">{{ reference.length }} {{ language === 'en' ? '词' : '字' }}</span>
+                            <span class="modal-count">{{ details.total }} {{ language === 'en' ? '词' : '字' }}</span>
                         </div>
                         <div class="modal-text-content" ref="modalRefContent" @scroll="syncModalScroll('ref')">
                             <span
@@ -311,7 +311,7 @@
                     <div class="modal-column">
                         <div class="modal-column-header">
                             <span class="modal-label">识别文本</span>
-                            <span class="modal-count">{{ hypothesis.length }} {{ language === 'en' ? '词' : '字' }}</span>
+                            <span class="modal-count">{{ hypothesisTokenCount }} {{ language === 'en' ? '词' : '字' }}</span>
                         </div>
                         <div class="modal-text-content" ref="modalHypContent" @scroll="syncModalScroll('hyp')">
                             <span
@@ -373,6 +373,11 @@
                 insertionCount() {
                     if (!this.alignment) return 0;
                     return this.alignment.filter(a => a.type === 'insertion').length;
+                },
+                hypothesisTokenCount() {
+                    // 识别文本的token数 = 总token数 - 删除数 + 插入数
+                    if (!this.details) return 0;
+                    return this.details.total - this.details.deletions + this.details.insertions;
                 }
             },
             mounted() {
