@@ -1755,19 +1755,6 @@ a:focus-visible {
 }
 
 /* ============================================
-   Load Button (History Page)
-   ============================================ */
-.load-btn {
-    background: var(--accent-cyan);
-    color: white;
-}
-
-.load-btn:hover {
-    background: #0891b2;
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
-}
-
-/* ============================================
    Legend Count Badge
    ============================================ */
 .legend-count {

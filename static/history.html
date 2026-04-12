@@ -116,14 +116,6 @@
                         </div>
                     </div>
                     <div class="history-actions">
-                        <button @click="loadRecord(item.id)" class="action-btn load-btn" title="加载到计算页面">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            加载
-                        </button>
                         <button @click="showComparison(item)" class="action-btn compare-btn" title="查看对比详情">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -425,10 +417,6 @@
                     const maxLength = item.language === 'en' ? 120 : 60;
                     if (text.length <= maxLength) return text;
                     return text.substring(0, maxLength) + '...';
-                },
-                loadRecord(id) {
-                    // 跳转到首页并加载记录
-                    window.location.href = '/?id=' + id;
                 },
                 async showComparison(item) {
                     this.showModal = true;
