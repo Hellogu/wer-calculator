@@ -225,7 +225,7 @@
                     <div class="modal-column">
                         <div class="modal-column-header">
                             <span class="modal-label">参考文本</span>
-                            <span class="modal-count">{{ comparisonData.reference.length }} 字符</span>
+                            <span class="modal-count">{{ comparisonData.reference.length }} {{ comparisonData.language === 'en' ? '词' : '字' }}</span>
                         </div>
                         <div class="modal-text-content" ref="modalRefContent" @scroll="syncScroll('ref')">
                             <span
@@ -241,7 +241,7 @@
                     <div class="modal-column">
                         <div class="modal-column-header">
                             <span class="modal-label">识别文本</span>
-                            <span class="modal-count">{{ comparisonData.hypothesis.length }} 字符</span>
+                            <span class="modal-count">{{ comparisonData.hypothesis.length }} {{ comparisonData.language === 'en' ? '词' : '字' }}</span>
                         </div>
                         <div class="modal-text-content" ref="modalHypContent" @scroll="syncScroll('hyp')">
                             <span
@@ -430,7 +430,8 @@
                             this.comparisonData = {
                                 reference: item.reference,
                                 hypothesis: item.hypothesis,
-                                alignment: alignment
+                                alignment: alignment,
+                                language: item.language
                             };
                         } catch (e) {
                             // 解析失败，重新计算
@@ -461,7 +462,8 @@
                             this.comparisonData = {
                                 reference: item.reference,
                                 hypothesis: item.hypothesis,
-                                alignment: data.data.alignment
+                                alignment: data.data.alignment,
+                                language: item.language
                             };
                         } else {
                             this.error = data.error || '计算失败';
