@@ -111,7 +111,7 @@
                                     @blur="saveTitle(item.id)"
                                     @keydown.enter="saveTitle(item.id)"
                                     @keydown.esc="cancelEdit"
-                                    ref="titleInput"
+                                    :ref="el => { if (el) titleInputRef = el }"
                                     class="title-edit-input"
                                     placeholder="输入标题"
                                 >
@@ -316,7 +316,8 @@
                     comparisonData: null,
                     editingId: null,
                     editingTitle: '',
-                    searchTimeout: null
+                    searchTimeout: null,
+                    titleInputRef: null
                 }
             },
             computed: {
@@ -432,7 +433,15 @@
                     this.editingId = item.id;
                     this.editingTitle = item.title || '';
                     this.$nextTick(() => {
-                        this.$refs.titleInput?.focus();
+                        // 使用setTimeout确保DOM完全渲染
+                        setTimeout(() => {
+                            const input = this.titleInputRef;
+                            if (input && input.focus) {
+                                input.focus();
+                                // 选中所有文本
+                                input.select();
+                            }
+                        }, 50);
                     });
                 },
                 async saveTitle(id) {
