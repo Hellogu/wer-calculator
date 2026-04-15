@@ -7,7 +7,7 @@ import os
 import json
 
 from calculator import calculate_metric
-from database import init_db, save_record, get_all_records, get_records_by_language, get_record_by_id, delete_record, clear_all_records, migrate_add_alignment
+from database import init_db, save_record, get_all_records, get_records_by_language, get_record_by_id, delete_record, clear_all_records, migrate_add_alignment, update_record_title, search_records_by_title
 
 app = Flask(__name__)
 CORS(app)
@@ -157,6 +157,53 @@ def clear_history():
     try:
         clear_all_records()
         return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/history/<int:record_id>/title', methods=['PUT'])
+def update_history_title(record_id):
+    """更新历史记录标题"""
+    try:
+        data = request.get_json()
+        title = data.get('title', '')
+
+        success = update_record_title(record_id, title)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({
+                'success': False,
+                'error': '记录不存在'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/history/search', methods=['GET'])
+def search_history():
+    """搜索历史记录（按标题）"""
+    try:
+        keyword = request.args.get('keyword', '')
+        language = request.args.get('language')
+
+        if not keyword:
+            return jsonify({
+                'success': False,
+                'error': '请提供搜索关键词'
+            }), 400
+
+        records = search_records_by_title(keyword, language)
+        return jsonify({
+            'success': True,
+            'data': records
+        })
     except Exception as e:
         return jsonify({
             'success': False,

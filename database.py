@@ -239,3 +239,74 @@ def clear_all_records() -> bool:
     conn.close()
     
     return True
+
+
+def update_record_title(record_id: int, title: str) -> bool:
+    """
+    更新记录标题
+    返回：是否成功
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('UPDATE history SET title = ? WHERE id = ?', (title, record_id))
+    
+    conn.commit()
+    affected = cursor.rowcount
+    conn.close()
+    
+    return affected > 0
+
+
+def search_records_by_title(keyword: str, language: str = None) -> list:
+    """
+    按标题关键词搜索历史记录
+    参数：
+        keyword: 搜索关键词
+        language: 可选，按语言过滤
+    返回：记录列表
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 使用 LIKE 进行模糊搜索
+    search_pattern = f'%{keyword}%'
+    
+    if language:
+        cursor.execute('''
+            SELECT id, timestamp, title, language, metric, result, total, substitutions, deletions, insertions, reference, hypothesis, alignment
+            FROM history
+            WHERE title LIKE ? AND language = ?
+            ORDER BY timestamp DESC
+        ''', (search_pattern, language))
+    else:
+        cursor.execute('''
+            SELECT id, timestamp, title, language, metric, result, total, substitutions, deletions, insertions, reference, hypothesis, alignment
+            FROM history
+            WHERE title LIKE ?
+            ORDER BY timestamp DESC
+        ''', (search_pattern,))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # 转换为字典列表
+    records = []
+    for row in rows:
+        records.append({
+            'id': row['id'],
+            'timestamp': row['timestamp'],
+            'title': row['title'],
+            'language': row['language'],
+            'metric': row['metric'],
+            'result': row['result'],
+            'total': row['total'],
+            'substitutions': row['substitutions'],
+            'deletions': row['deletions'],
+            'insertions': row['insertions'],
+            'reference': row['reference'],
+            'hypothesis': row['hypothesis'],
+            'alignment': row['alignment']
+        })
+    
+    return records

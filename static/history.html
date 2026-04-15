@@ -44,7 +44,25 @@
         </header>
 
         <!-- 过滤栏 -->
-        <section class="filter-bar" v-if="history.length > 0 || filterLanguage">
+        <section class="filter-bar" v-if="history.length > 0 || filterLanguage || searchKeyword">
+            <div class="filter-group">
+                <label class="filter-label">搜索标题</label>
+                <div class="search-input-wrapper">
+                    <input 
+                        type="text" 
+                        v-model="searchKeyword" 
+                        @input="onSearchInput"
+                        placeholder="输入关键词搜索..."
+                        class="search-input"
+                    >
+                    <button v-if="searchKeyword" @click="clearSearch" class="search-clear-btn" title="清空搜索">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
             <div class="filter-group">
                 <label class="filter-label">语种过滤</label>
                 <select v-model="filterLanguage" @change="onFilterChange" class="filter-select">
@@ -86,7 +104,25 @@
                 >
                     <div class="history-main">
                         <div class="history-title-section">
-                            <h3 class="history-title">{{ item.title || '未命名记录' }}</h3>
+                            <div v-if="editingId === item.id" class="title-edit-wrapper">
+                                <input 
+                                    type="text" 
+                                    v-model="editingTitle" 
+                                    @blur="saveTitle(item.id)"
+                                    @keydown.enter="saveTitle(item.id)"
+                                    @keydown.esc="cancelEdit"
+                                    ref="titleInput"
+                                    class="title-edit-input"
+                                    placeholder="输入标题"
+                                >
+                            </div>
+                            <h3 v-else class="history-title" @click="startEdit(item)" title="点击重命名">
+                                {{ item.title || '未命名记录' }}
+                                <svg class="edit-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </h3>
                             <span class="history-time">{{ formatTime(item.timestamp) }}</span>
                         </div>
                         <div class="history-preview">
@@ -272,11 +308,15 @@
                     history: [],
                     error: null,
                     filterLanguage: '',
+                    searchKeyword: '',
                     currentPage: 1,
                     pageSize: 10,
                     totalRecords: 0,
                     showModal: false,
-                    comparisonData: null
+                    comparisonData: null,
+                    editingId: null,
+                    editingTitle: '',
+                    searchTimeout: null
                 }
             },
             computed: {
@@ -338,10 +378,94 @@
             },
             methods: {
                 handleGlobalKeydown(e) {
-                    // ESC 关闭弹窗
-                    if (e.key === 'Escape' && this.showModal) {
-                        this.closeComparison();
+                    // ESC 关闭弹窗或取消编辑
+                    if (e.key === 'Escape') {
+                        if (this.showModal) {
+                            this.closeComparison();
+                        } else if (this.editingId !== null) {
+                            this.cancelEdit();
+                        }
                     }
+                },
+                // 搜索相关方法
+                onSearchInput() {
+                    // 防抖处理
+                    if (this.searchTimeout) {
+                        clearTimeout(this.searchTimeout);
+                    }
+                    this.searchTimeout = setTimeout(() => {
+                        this.performSearch();
+                    }, 300);
+                },
+                async performSearch() {
+                    if (!this.searchKeyword.trim()) {
+                        // 如果搜索框为空，加载全部
+                        await this.loadHistory();
+                        return;
+                    }
+
+                    try {
+                        let url = '/api/history/search?keyword=' + encodeURIComponent(this.searchKeyword);
+                        if (this.filterLanguage) {
+                            url += '&language=' + this.filterLanguage;
+                        }
+                        const response = await fetch(url);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.history = data.data;
+                            this.totalRecords = data.data.length;
+                            this.currentPage = 1;
+                        } else {
+                            this.error = data.error || '搜索失败';
+                        }
+                    } catch (err) {
+                        this.error = '搜索请求失败: ' + err.message;
+                    }
+                },
+                clearSearch() {
+                    this.searchKeyword = '';
+                    this.loadHistory();
+                },
+                // 标题编辑相关方法
+                startEdit(item) {
+                    this.editingId = item.id;
+                    this.editingTitle = item.title || '';
+                    this.$nextTick(() => {
+                        this.$refs.titleInput?.focus();
+                    });
+                },
+                async saveTitle(id) {
+                    if (this.editingId !== id) return;
+
+                    try {
+                        const response = await fetch(`/api/history/${id}/title`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: this.editingTitle })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // 更新本地数据
+                            const item = this.history.find(h => h.id === id);
+                            if (item) {
+                                item.title = this.editingTitle;
+                            }
+                        } else {
+                            this.error = data.error || '重命名失败';
+                        }
+                    } catch (err) {
+                        this.error = '重命名请求失败: ' + err.message;
+                    }
+
+                    this.editingId = null;
+                    this.editingTitle = '';
+                },
+                cancelEdit() {
+                    this.editingId = null;
+                    this.editingTitle = '';
                 },
                 getTokenTooltip(item, type) {
                     const typeNames = {
@@ -385,7 +509,12 @@
                 },
                 onFilterChange() {
                     this.currentPage = 1;
-                    this.loadHistory();
+                    // 如果有搜索关键词，执行搜索；否则加载全部
+                    if (this.searchKeyword.trim()) {
+                        this.performSearch();
+                    } else {
+                        this.loadHistory();
+                    }
                 },
                 onPageSizeChange() {
                     this.currentPage = 1;
