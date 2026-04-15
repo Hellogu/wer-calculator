@@ -1114,6 +1114,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 
 .preview-label {
@@ -1126,6 +1127,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .preview-text {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

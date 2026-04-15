@@ -128,11 +128,11 @@
                         <div class="history-preview">
                             <div class="preview-item">
                                 <span class="preview-label">参考</span>
-                                <span class="preview-text" :class="'lang-' + item.language">{{ truncateText(item.reference, item) }}</span>
+                                <span class="preview-text" :class="'lang-' + item.language">{{ item.reference }}</span>
                             </div>
                             <div class="preview-item">
                                 <span class="preview-label">识别</span>
-                                <span class="preview-text" :class="'lang-' + item.language">{{ truncateText(item.hypothesis, item) }}</span>
+                                <span class="preview-text" :class="'lang-' + item.language">{{ item.hypothesis }}</span>
                             </div>
                         </div>
                     </div>
@@ -556,13 +556,6 @@
                     if (result < 5) return 'excellent';
                     if (result < 15) return 'good';
                     return 'poor';
-                },
-                truncateText(text, item) {
-                    // 根据语言类型调整字符数，使显示宽度大致一致
-                    // 英文单词较长，显示更多字符；中日文字符较宽，显示较少字符
-                    const maxLength = item.language === 'en' ? 120 : 60;
-                    if (text.length <= maxLength) return text;
-                    return text.substring(0, maxLength) + '...';
                 },
                 async showComparison(item) {
                     this.showModal = true;
