@@ -21,74 +21,112 @@ ENGLISH_NUMBERS = {
 }
 
 
+def chinese_to_number(text: str) -> str:
+    """
+    将中文数字转换为阿拉伯数字
+    支持: 零-九、十、百、千、万、两、廿、卅、卌
+    例如: 二十一 -> 21, 一百零五 -> 105, 三千二百一十 -> 3210
+    """
+    # 定义中文数字到数值的映射
+    cn_to_value = {
+        '零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
+        '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+        '两': 2, '廿': 20, '卅': 30, '卌': 40
+    }
+    # 单位到数值的映射
+    unit_to_value = {
+        '十': 10, '百': 100, '千': 1000, '万': 10000
+    }
+
+    def parse_number(s: str) -> int:
+        """解析一个中文数字字符串为整数"""
+        if not s:
+            return 0
+
+        result = 0
+        current = 0
+        i = 0
+        while i < len(s):
+            char = s[i]
+            if char in cn_to_value:
+                current = cn_to_value[char]
+                i += 1
+            elif char in unit_to_value:
+                unit_val = unit_to_value[char]
+                if current == 0:
+                    current = 1
+                if unit_val >= 10000:
+                    result = (result + current) * unit_val
+                else:
+                    result += current * unit_val
+                current = 0
+                i += 1
+            else:
+                i += 1
+        result += current
+        return result
+
+    # 匹配中文数字模式
+    # 包括：十、二十一、一百、一千零五、三千二百一十、两百万等
+    pattern = r'[零一二三四五六七八九两廿卅卌十百千万]+'
+
+    def replace_match(m):
+        match = m.group(0)
+        # 尝试解析为数字
+        try:
+            num = parse_number(match)
+            return str(num)
+        except:
+            return match
+
+    return re.sub(pattern, replace_match, text)
+
+
+def english_to_number(text: str) -> str:
+    """
+    将英文数字单词转换为阿拉伯数字
+    支持: zero-twenty
+    """
+    # 扩展英文数字映射，支持更多数字
+    english_nums = {
+        'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+        'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+        'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+        'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+        'eighteen': '18', 'nineteen': '19', 'twenty': '20'
+    }
+
+    words = text.split()
+    normalized_words = []
+    for word in words:
+        # 去除标点
+        clean_word = re.sub(r'[^\w]', '', word.lower())
+        if clean_word in english_nums:
+            normalized_words.append(english_nums[clean_word])
+        else:
+            normalized_words.append(word)
+    return ' '.join(normalized_words)
+
+
 def normalize_numbers(text: str, language: str) -> str:
     """
     将各种形式的数字统一转换为阿拉伯数字
-    - 阿拉伯数字: 10, 100
+    - 阿拉伯数字: 10, 100 (保持不变)
     - 中文数字: 十, 一百, 一千零五, 二十一
     - 英文数字: ten, one hundred
+
+    无论原始语言是什么，都会尝试转换中文和英文数字
+    这样 "10"、"十"、"ten" 都会被统一为 "10"
     """
-    if language == 'zh':
-        # 中文数字转换为阿拉伯数字
-        result = text
+    result = text
 
-        # 定义中文数字到阿拉伯数字的映射（个位数）
-        digit_map = {
-            '零': '0', '一': '1', '二': '2', '三': '3', '四': '4',
-            '五': '5', '六': '6', '七': '7', '八': '8', '九': '9',
-            '两': '2'
-        }
+    # 先处理中文数字（适用于所有语言，因为文本中可能包含中文数字）
+    result = chinese_to_number(result)
 
-        # 第一步：处理"几十几"格式（如"二十一" -> "2十1"）
-        # 匹配：数字 + 十 + 数字
-        def replace_shiji(m):
-            tens = digit_map.get(m.group(1), m.group(1))
-            ones = digit_map.get(m.group(2), m.group(2))
-            return tens + '十' + ones
+    # 再处理英文数字（适用于所有语言）
+    result = english_to_number(result)
 
-        result = re.sub(r'([零一二三四五六七八九两])十([零一二三四五六七八九])', replace_shiji, result)
-
-        # 第二步：处理"几十"格式（如"二十" -> "2十"）
-        def replace_shi(m):
-            tens = digit_map.get(m.group(1), m.group(1))
-            return tens + '十'
-
-        result = re.sub(r'([零一二三四五六七八九两])十', replace_shi, result)
-
-        # 第三步：处理"十几"格式（如"十五" -> "十5"）
-        def replace_shi2(m):
-            ones = digit_map.get(m.group(1), m.group(1))
-            return '十' + ones
-
-        result = re.sub(r'十([零一二三四五六七八九])', replace_shi2, result)
-
-        # 第四步：处理组合数字（如"2十1" -> "21"）
-        result = re.sub(r'(\d)十(\d)', r'\1\2', result)
-        result = re.sub(r'(\d)十', lambda m: m.group(1) + '0', result)
-        result = re.sub(r'十(\d)', lambda m: '1' + m.group(1), result)
-
-        # 第五步：处理单独的"十"
-        result = result.replace('十', '10')
-
-        # 第六步：替换剩余的个位数
-        for cn, num in digit_map.items():
-            result = result.replace(cn, num)
-
-        return result
-    elif language == 'en':
-        # 英文数字转换为阿拉伯数字（简单处理）
-        words = text.split()
-        normalized_words = []
-        for word in words:
-            lower_word = word.lower()
-            if lower_word in ENGLISH_NUMBERS:
-                normalized_words.append(ENGLISH_NUMBERS[lower_word])
-            else:
-                normalized_words.append(word)
-        return ' '.join(normalized_words)
-    else:
-        # 日文暂不处理复杂数字
-        return text
+    return result
 
 
 def preprocess_text(text: str, language: str) -> str:
