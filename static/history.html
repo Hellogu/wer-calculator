@@ -73,6 +73,17 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label class="filter-label">排序方式</label>
+                <select v-model="sortBy" @change="onSortChange" class="filter-select">
+                    <option value="time-desc">时间（最新）</option>
+                    <option value="time-asc">时间（最早）</option>
+                    <option value="result-asc">结果（低→高）</option>
+                    <option value="result-desc">结果（高→低）</option>
+                    <option value="title-asc">标题（A→Z）</option>
+                    <option value="title-desc">标题（Z→A）</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label class="filter-label">每页显示</label>
                 <select v-model="pageSize" @change="onPageSizeChange" class="filter-select">
                     <option :value="5">5条</option>
@@ -309,6 +320,7 @@
                     error: null,
                     filterLanguage: '',
                     searchKeyword: '',
+                    sortBy: 'time-desc',
                     currentPage: 1,
                     pageSize: 10,
                     totalRecords: 0,
@@ -324,10 +336,35 @@
                 totalPages() {
                     return Math.ceil(this.totalRecords / this.pageSize);
                 },
+                sortedHistory() {
+                    // 根据排序选项对历史记录进行排序
+                    const sorted = [...this.history];
+                    switch (this.sortBy) {
+                        case 'time-desc':
+                            sorted.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                            break;
+                        case 'time-asc':
+                            sorted.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                            break;
+                        case 'result-asc':
+                            sorted.sort((a, b) => a.result - b.result);
+                            break;
+                        case 'result-desc':
+                            sorted.sort((a, b) => b.result - a.result);
+                            break;
+                        case 'title-asc':
+                            sorted.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'zh-CN'));
+                            break;
+                        case 'title-desc':
+                            sorted.sort((a, b) => (b.title || '').localeCompare(a.title || '', 'zh-CN'));
+                            break;
+                    }
+                    return sorted;
+                },
                 paginatedHistory() {
                     const start = (this.currentPage - 1) * this.pageSize;
                     const end = start + this.pageSize;
-                    return this.history.slice(start, end);
+                    return this.sortedHistory.slice(start, end);
                 },
                 pageNumbers() {
                     const pages = [];
@@ -526,6 +563,10 @@
                     }
                 },
                 onPageSizeChange() {
+                    this.currentPage = 1;
+                },
+                onSortChange() {
+                    // 排序改变时重置到第一页
                     this.currentPage = 1;
                 },
                 goToPage(page) {
