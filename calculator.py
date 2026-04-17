@@ -145,9 +145,9 @@ def preprocess_text(text: str, language: str) -> str:
         text = text.lower()
         # 数字归一化（英文数字转阿拉伯数字）
         text = normalize_numbers(text, language)
-        # 英文：只保留字母、数字和空格（用于分词）
-        text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-        # 再次清理多余空格
+        # 英文：先将标点符号替换为空格，避免单词粘连（如 "hello,world" -> "hello world"）
+        text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
+        # 清理多余空格
         text = re.sub(r'\s+', ' ', text).strip()
     elif language == 'zh':
         # 数字归一化（中文数字转阿拉伯数字）
