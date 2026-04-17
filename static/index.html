@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="ASR WER/CER Calculator - 专业的语音识别准确率评估工具">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" :content="themeColor">
     <title>ASR WER/CER Calculator</title>
     
     <!-- Google Fonts -->
@@ -23,6 +23,24 @@
 </head>
 <body>
     <div id="app">
+        <!-- 主题切换按钮 -->
+        <button class="theme-toggle" @click="toggleTheme" :title="isDarkTheme ? '切换到浅色主题' : '切换到深色主题'">
+            <svg v-if="isDarkTheme" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+
         <!-- 顶部栏 -->
         <header class="header compact">
             <div class="logo">
@@ -345,7 +363,8 @@
                     details: null,
                     alignment: null,
                     error: null,
-                    showModal: false
+                    showModal: false,
+                    isDarkTheme: true
                 }
             },
             computed: {
@@ -378,10 +397,15 @@
                     // 识别文本的token数 = 总token数 - 删除数 + 插入数
                     if (!this.details) return 0;
                     return this.details.total - this.details.deletions + this.details.insertions;
+                },
+                themeColor() {
+                    return this.isDarkTheme ? '#0f172a' : '#f8fafc';
                 }
             },
             mounted() {
                 this.loadFromUrlParams();
+                // 加载保存的主题设置
+                this.loadTheme();
                 // 添加键盘事件监听
                 document.addEventListener('keydown', this.handleGlobalKeydown);
             },
@@ -402,6 +426,32 @@
                     // ESC 关闭弹窗
                     if (e.key === 'Escape' && this.showModal) {
                         this.closeComparisonModal();
+                    }
+                },
+                // 主题切换相关方法
+                loadTheme() {
+                    // 从 localStorage 加载主题设置
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme) {
+                        this.isDarkTheme = savedTheme === 'dark';
+                    } else {
+                        // 检测系统偏好
+                        this.isDarkTheme = !window.matchMedia('(prefers-color-scheme: light)').matches;
+                    }
+                    this.applyTheme();
+                },
+                toggleTheme() {
+                    this.isDarkTheme = !this.isDarkTheme;
+                    this.applyTheme();
+                    // 保存主题设置
+                    localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
+                },
+                applyTheme() {
+                    // 应用主题到 document
+                    if (this.isDarkTheme) {
+                        document.documentElement.removeAttribute('data-theme');
+                    } else {
+                        document.documentElement.setAttribute('data-theme', 'light');
                     }
                 },
                 getTokenTooltip(item, type) {

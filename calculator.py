@@ -26,6 +26,8 @@ def chinese_to_number(text: str) -> str:
     将中文数字转换为阿拉伯数字
     支持: 零-九、十、百、千、万、两、廿、卅、卌
     例如: 二十一 -> 21, 一百零五 -> 105, 三千二百一十 -> 3210
+    
+    优化: 只对包含数字字符的部分进行处理，提高性能
     """
     # 定义中文数字到数值的映射
     cn_to_value = {
@@ -37,7 +39,10 @@ def chinese_to_number(text: str) -> str:
     unit_to_value = {
         '十': 10, '百': 100, '千': 1000, '万': 10000
     }
-
+    
+    # 所有可能的数字字符集合
+    all_num_chars = set(cn_to_value.keys()) | set(unit_to_value.keys())
+    
     def parse_number(s: str) -> int:
         """解析一个中文数字字符串为整数"""
         if not s:
@@ -65,21 +70,42 @@ def chinese_to_number(text: str) -> str:
                 i += 1
         result += current
         return result
-
-    # 匹配中文数字模式
-    # 包括：十、二十一、一百、一千零五、三千二百一十、两百万等
-    pattern = r'[零一二三四五六七八九两廿卅卌十百千万]+'
-
-    def replace_match(m):
-        match = m.group(0)
-        # 尝试解析为数字
-        try:
-            num = parse_number(match)
-            return str(num)
-        except:
-            return match
-
-    return re.sub(pattern, replace_match, text)
+    
+    def is_number_char(c):
+        """检查字符是否是数字相关字符"""
+        return c in all_num_chars
+    
+    # 快速检查：如果文本中不包含任何数字字符，直接返回
+    if not any(is_number_char(c) for c in text):
+        return text
+    
+    # 使用更高效的方式：遍历文本，只对数字部分进行替换
+    result = []
+    i = 0
+    n = len(text)
+    
+    while i < n:
+        # 检查当前位置是否是数字序列的开始
+        if is_number_char(text[i]):
+            # 找到连续的数字字符
+            j = i
+            while j < n and is_number_char(text[j]):
+                j += 1
+            
+            # 提取数字字符串并转换
+            num_str = text[i:j]
+            try:
+                num = parse_number(num_str)
+                result.append(str(num))
+            except:
+                result.append(num_str)
+            
+            i = j
+        else:
+            result.append(text[i])
+            i += 1
+    
+    return ''.join(result)
 
 
 def english_to_number(text: str) -> str:
