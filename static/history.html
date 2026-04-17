@@ -467,6 +467,11 @@
                 },
                 // 标题编辑相关方法
                 startEdit(item) {
+                    // 如果正在编辑其他标题，先保存当前编辑
+                    if (this.editingId !== null && this.editingId !== item.id) {
+                        this.saveTitle(this.editingId);
+                    }
+                    
                     this.editingId = item.id;
                     this.editingTitle = item.title || '';
                     this.$nextTick(() => {

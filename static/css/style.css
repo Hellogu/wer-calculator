@@ -1764,14 +1764,14 @@ a:focus-visible {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 20px;
-    padding: 2px 6px;
+    min-width: 28px;
+    padding: 4px 8px;
     background: var(--bg-tertiary);
-    border-radius: 10px;
-    font-size: 10px;
+    border-radius: 12px;
+    font-size: 14px;
     font-weight: 700;
     font-family: var(--font-mono);
-    margin-right: 4px;
+    margin-right: 6px;
 }
 
 .legend-item.correct .legend-count {
