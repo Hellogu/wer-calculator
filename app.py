@@ -1,10 +1,12 @@
 """
 Flask 主应用
 """
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 import os
 import json
+import csv
+import io
 
 from calculator import calculate_metric
 from database import init_db, save_record, get_all_records, get_records_by_language, get_record_by_id, delete_record, clear_all_records, migrate_add_alignment, update_record_title, search_records_by_title
@@ -204,6 +206,93 @@ def search_history():
             'success': True,
             'data': records
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/history/export', methods=['GET'])
+def export_history():
+    """导出历史记录为CSV"""
+    try:
+        # 获取导出范围参数
+        export_scope = request.args.get('scope', 'all')  # 'all' 或 'filtered'
+        language = request.args.get('language')
+        keyword = request.args.get('keyword')
+
+        # 获取记录数据
+        if export_scope == 'filtered':
+            # 导出筛选结果
+            if keyword:
+                records = search_records_by_title(keyword, language)
+            elif language:
+                records = get_records_by_language(language)
+            else:
+                records = get_all_records()
+        else:
+            # 导出全部
+            records = get_all_records()
+
+        if not records:
+            return jsonify({
+                'success': False,
+                'error': '没有可导出的记录'
+            }), 400
+
+        # 创建CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # 写入表头（中文）
+        headers = ['ID', '标题', '时间', '语言', '参考文本', '识别文本', '指标', '错误率', '替换数', '删除数', '插入数', '总数']
+        writer.writerow(headers)
+
+        # 语言映射
+        lang_map = {'en': '英文', 'zh': '中文', 'ja': '日文'}
+
+        # 写入数据
+        for record in records:
+            row = [
+                record['id'],
+                record.get('title', ''),
+                record['timestamp'],
+                lang_map.get(record['language'], record['language']),
+                record['reference'],
+                record['hypothesis'],
+                record['metric'],
+                f"{record['result']}%",
+                record['substitutions'],
+                record['deletions'],
+                record['insertions'],
+                record['total']
+            ]
+            writer.writerow(row)
+
+        # 获取CSV内容
+        csv_content = output.getvalue()
+        output.close()
+
+        # 添加BOM以支持Excel中文显示
+        csv_content = '\ufeff' + csv_content
+
+        # 生成文件名
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"wer_history_{timestamp}.csv"
+
+        # 返回CSV文件
+        response = Response(
+            csv_content.encode('utf-8'),
+            mimetype='text/csv; charset=utf-8',
+            headers={
+                'Content-Disposition': f'attachment; filename={filename}',
+                'Content-Type': 'text/csv; charset=utf-8'
+            }
+        )
+        return response
+
     except Exception as e:
         return jsonify({
             'success': False,

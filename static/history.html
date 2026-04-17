@@ -94,6 +94,14 @@
             </div>
             <div class="filter-right">
                 <span class="record-count">共 {{ totalRecords }} 条记录</span>
+                <button @click="showExportDialog" class="export-btn-small" title="导出历史记录">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    导出
+                </button>
                 <button @click="clearAll" class="clear-btn-small" title="清空所有历史记录">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -308,6 +316,50 @@
                 </div>
             </div>
         </div>
+
+        <!-- 导出弹窗 -->
+        <div v-if="showExportModal" class="modal-overlay export-modal-overlay" @click.self="closeExportDialog">
+            <div class="modal-content export-modal-content" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+                <div class="modal-header">
+                    <h2 id="export-modal-title">导出历史记录</h2>
+                    <button @click="closeExportDialog" class="modal-close" aria-label="关闭弹窗">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body export-modal-body">
+                    <div class="export-options">
+                        <div class="export-option-group">
+                            <label class="export-option-label">导出范围</label>
+                            <div class="export-option-items">
+                                <label class="export-radio-label">
+                                    <input type="radio" v-model="exportScope" value="all" name="exportScope">
+                                    <span class="export-radio-text">全部记录（{{ allRecordsCount }}条）</span>
+                                </label>
+                                <label class="export-radio-label" :class="{ disabled: !hasActiveFilter }">
+                                    <input type="radio" v-model="exportScope" value="filtered" name="exportScope" :disabled="!hasActiveFilter">
+                                    <span class="export-radio-text">当前筛选结果（{{ filteredCount }}条）</span>
+                                    <span v-if="!hasActiveFilter" class="export-hint">（请先进行筛选）</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="export-option-group">
+                            <label class="export-option-label">文件格式</label>
+                            <div class="export-format-badge">CSV</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer export-modal-footer">
+                    <button @click="closeExportDialog" class="btn btn-secondary">取消</button>
+                    <button @click="exportHistory" class="btn btn-primary" :disabled="isExporting">
+                        <span v-if="isExporting" class="btn-spinner"></span>
+                        <span v-else>导出</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -329,7 +381,11 @@
                     editingId: null,
                     editingTitle: '',
                     searchTimeout: null,
-                    titleInputRef: null
+                    titleInputRef: null,
+                    showExportModal: false,
+                    exportScope: 'all',
+                    isExporting: false,
+                    allRecordsCount: 0  // 存储所有记录的总数（不受筛选影响）
                 }
             },
             computed: {
@@ -404,10 +460,18 @@
                     const total = this.comparisonData.alignment.filter(a => a.type !== 'insertion').length;
                     const insertions = this.comparisonData.alignment.filter(a => a.type === 'insertion').length;
                     return total + insertions;
+                },
+                hasActiveFilter() {
+                    return this.filterLanguage || this.searchKeyword.trim();
+                },
+                filteredCount() {
+                    return this.history.length;
                 }
             },
-            mounted() {
-                this.loadHistory();
+            async mounted() {
+                await this.loadHistory();
+                // 初始化所有记录总数
+                await this.loadAllRecordsCount();
                 // 添加键盘事件监听
                 document.addEventListener('keydown', this.handleGlobalKeydown);
             },
@@ -547,10 +611,14 @@
                         }
                         const response = await fetch(url);
                         const data = await response.json();
-                        
+
                         if (data.success) {
                             this.history = data.data;
                             this.totalRecords = data.data.length;
+                            // 如果没有筛选条件，更新所有记录总数
+                            if (!this.filterLanguage && !this.searchKeyword) {
+                                this.allRecordsCount = data.data.length;
+                            }
                         } else {
                             this.error = data.error || '加载失败';
                         }
@@ -715,6 +783,79 @@
                         }
                     } catch (err) {
                         this.error = '请求失败: ' + err.message;
+                    }
+                },
+                // 加载所有记录总数（用于导出显示）
+                async loadAllRecordsCount() {
+                    try {
+                        const response = await fetch('/api/history');
+                        const data = await response.json();
+                        if (data.success) {
+                            this.allRecordsCount = data.data.length;
+                        }
+                    } catch (err) {
+                        console.error('加载记录总数失败:', err);
+                    }
+                },
+                // 导出相关方法
+                showExportDialog() {
+                    this.showExportModal = true;
+                    this.exportScope = 'all';
+                    document.body.style.overflow = 'hidden';
+                },
+                closeExportDialog() {
+                    this.showExportModal = false;
+                    document.body.style.overflow = '';
+                },
+                async exportHistory() {
+                    this.isExporting = true;
+
+                    try {
+                        // 构建导出URL
+                        let url = '/api/history/export?scope=' + this.exportScope;
+                        if (this.exportScope === 'filtered') {
+                            if (this.searchKeyword) {
+                                url += '&keyword=' + encodeURIComponent(this.searchKeyword);
+                            }
+                            if (this.filterLanguage) {
+                                url += '&language=' + this.filterLanguage;
+                            }
+                        }
+
+                        // 发送请求获取CSV文件
+                        const response = await fetch(url);
+
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || '导出失败');
+                        }
+
+                        // 获取文件名
+                        const contentDisposition = response.headers.get('Content-Disposition');
+                        let filename = 'wer_history.csv';
+                        if (contentDisposition) {
+                            const match = contentDisposition.match(/filename=([^;]+)/);
+                            if (match) {
+                                filename = match[1].trim();
+                            }
+                        }
+
+                        // 下载文件
+                        const blob = await response.blob();
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = downloadUrl;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(downloadUrl);
+
+                        this.closeExportDialog();
+                    } catch (err) {
+                        this.error = '导出失败: ' + err.message;
+                    } finally {
+                        this.isExporting = false;
                     }
                 }
             }
