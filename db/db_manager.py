@@ -9,8 +9,12 @@ from typing import List, Optional, Dict, Any
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 
-from ..config import Config
-from ..models.calculation_result import CalculationResultModel, AlignmentItemModel
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from config import Config
+from models.calculation_result import CalculationResultModel, AlignmentItemModel
 
 
 class DatabaseManager:

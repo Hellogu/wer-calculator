@@ -8,7 +8,7 @@ import json
 import csv
 import io
 
-from calculator import calculate_metric
+from calculator import calculate_wer_cer as calculate_metric
 from database import init_db, save_record, get_all_records, get_records_by_language, get_record_by_id, delete_record, clear_all_records, migrate_add_alignment, update_record_title, search_records_by_title
 
 app = Flask(__name__)

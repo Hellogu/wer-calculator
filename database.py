@@ -2,7 +2,7 @@
 数据库模块（兼容层）
 为了保持向后兼容，此模块导出新的数据库管理器功能
 """
-from database.db_manager import DatabaseManager
+from db.db_manager import DatabaseManager
 from config import Config
 
 # 创建全局数据库管理器实例
