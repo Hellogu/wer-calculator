@@ -19,7 +19,7 @@ class TextProcessor:
         'zh': {
             'to_lower': False,
             'punctuation_to_space': False,
-            'allowed_chars': r'\u4e00-\u9fff0-9',
+            'allowed_chars': r'\u4e00-\u9fff0-9\s',
         },
         'ja': {
             'to_lower': True,

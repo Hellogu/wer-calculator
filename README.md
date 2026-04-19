@@ -31,6 +31,7 @@
 - 🌐 **局域网共享**：支持多设备同时访问
 - 📱 **响应式设计**：适配不同屏幕尺寸
 - ⚡ **高性能**：优化长文本处理，支持2000+字符快速计算
+- 🧪 **全面测试**：包含核心模块的单元测试
 
 ## 🚀 快速开始
 
@@ -128,17 +129,26 @@ CER = (S + D + I) / N × 100%
 ## 🧪 测试
 
 ```bash
-python test_calculator.py
+# 运行所有测试
+python -m pytest tests/ -v
+
+# 运行特定测试文件
+python -m pytest tests/test_calculator.py -v
+python -m pytest tests/test_number_normalizer.py -v
 ```
 
-包含 36 个测试用例，覆盖：
-- 基准测试（完美匹配、全错）
-- 单错误类型（纯替换、纯删除、纯插入）
-- 混合错误（S+D+I 组合）
-- 边界条件（空字符串、特殊字符）
-- 语言特性（大小写、空格、编码）
-- 长文本（100-500字符）
-- 真实场景（会议、客服、播客）
+包含核心模块的单元测试：
+- **test_calculator.py**: WER/CER 计算核心测试
+  - 完美匹配、替换、删除、插入错误类型
+  - 多语言支持（英文、中文、日文）
+  - 边界条件（空字符串、特殊字符）
+  - 对齐结果验证
+  
+- **test_number_normalizer.py**: 数字归一化测试
+  - 中文数字（个位、十位、百位、千位、万位）
+  - 英文数字（0-20）
+  - 混合文本处理
+  - 特殊数字（两、廿、卅）
 
 ## 📦 打包发布
 
@@ -162,26 +172,78 @@ pyinstaller wer-calculator.spec
 - **前端**：Vue.js 3 (CDN)
 - **数据库**：SQLite
 - **样式**：原生 CSS + Google Fonts
+- **架构**：模块化设计（core / models / db / services）
 
 ## 📁 项目结构
 
 ```
 wer-calculator/
-├── app.py                 # Flask 主应用
-├── calculator.py          # WER/CER 计算核心
-├── database.py            # SQLite 数据库操作
-├── test_calculator.py     # 测试用例（36个）
-├── requirements.txt       # Python 依赖
-├── wer-calculator.spec   # PyInstaller 配置
-├── static/
-│   ├── index.html        # 主页面
-│   ├── history.html      # 历史记录页面
+├── app.py                      # Flask 主应用（兼容层）
+├── requirements.txt            # Python 依赖
+├── wer-calculator.spec        # PyInstaller 配置
+├── README.md                  # 项目文档
+├── core/                      # 核心计算模块
+│   ├── __init__.py
+│   ├── calculator.py          # WER/CER 计算核心
+│   ├── text_processor.py      # 文本预处理
+│   └── number_normalizer.py   # 数字归一化
+├── models/                    # 数据模型
+│   ├── __init__.py
+│   └── calculation_result.py  # 计算结果模型
+├── db/                        # 数据库模块
+│   ├── __init__.py
+│   └── db_manager.py          # 数据库管理
+├── services/                  # 业务逻辑层
+│   ├── __init__.py
+│   ├── calculation_service.py # 计算服务
+│   └── history_service.py     # 历史记录服务
+├── tests/                     # 测试模块
+│   ├── __init__.py
+│   ├── test_calculator.py     # 计算核心测试
+│   └── test_number_normalizer.py # 数字归一化测试
+├── static/                    # 静态资源
+│   ├── index.html            # 主页面
+│   ├── history.html          # 历史记录页面
 │   └── css/
-│       └── style.css     # 样式文件
-└── wer_calculator.db     # SQLite 数据库（自动创建）
+│       └── style.css         # 样式文件
+└── wer_calculator.db         # SQLite 数据库（自动创建）
 ```
 
+## 🏗 架构说明
+
+项目采用模块化架构设计，职责分离清晰：
+
+### Core 层（核心计算）
+- `calculator.py`: WER/CER 计算算法实现
+- `text_processor.py`: 多语言文本预处理
+- `number_normalizer.py`: 中文/英文数字归一化
+
+### Models 层（数据模型）
+- `calculation_result.py`: 计算结果的数据类定义
+
+### DB 层（数据持久化）
+- `db_manager.py`: SQLite 数据库操作封装
+
+### Services 层（业务逻辑）
+- `calculation_service.py`: 计算业务逻辑，协调 core 和 db
+- `history_service.py`: 历史记录业务逻辑
+
+### 兼容层
+- `app.py`: 保持与旧版 API 的兼容性，调用 services 层
+
 ## 📝 更新日志
+
+### v1.3.0 (2026-04-19)
+- 🏗 **架构重构**：采用模块化架构设计
+  - 分离 core / models / db / services 层
+  - 提高代码可维护性和可测试性
+  - 添加单元测试覆盖核心功能
+- 🧪 **测试增强**：新增 pytest 测试套件
+  - 计算核心测试（12个用例）
+  - 数字归一化测试（16个用例）
+- 🔧 **代码优化**：数字归一化算法改进
+  - 支持混合文本中英文数字转换
+  - 优化连续个位数处理（如"一二三"→"123"）
 
 ### v1.2.6 (2026-04-17)
 - 🌓 **主题切换**：支持深色/浅色主题切换
