@@ -181,8 +181,10 @@ def preprocess_text(text: str, language: str) -> str:
         # 中文：只保留中文字符和数字
         text = re.sub(r'[^\u4e00-\u9fff0-9]', '', text)
     elif language == 'ja':
-        # 日文：只保留日文假名和汉字
-        text = re.sub(r'[^\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]', '', text)
+        # 日文：保留日文假名、汉字、英文字母和数字（支持混合语言）
+        text = re.sub(r'[^\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fffa-zA-Z0-9]', '', text)
+        # 英文字母转小写
+        text = text.lower()
 
     return text
 
